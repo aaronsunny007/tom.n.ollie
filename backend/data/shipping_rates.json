@@ -1,0 +1,45 @@
+{
+  "_note": "PLACEHOLDER RATE CARD. These figures are planning estimates from the requirements document (SS11), not quotes. Replace every band with a written carrier quote before taking real orders - rates set below true cost erode margin silently on every order.",
+  "quoted": false,
+  "currency": "GBP",
+  "free_delivery_zones": ["NI", "GB"],
+  "zones": {
+    "NI": {
+      "label": "Northern Ireland",
+      "services": {
+        "standard": {"label": "Standard (2-3 working days)", "chilled": false, "bands": [[2000, 395], [5000, 495], [10000, 695], [30000, 995]]},
+        "next_day": {"label": "Next working day", "chilled": true, "bands": [[2000, 795], [5000, 995], [10000, 1295], [30000, 1695]]},
+        "named_day": {"label": "Named day", "chilled": true, "bands": [[2000, 895], [5000, 1095], [10000, 1395], [30000, 1795]]}
+      }
+    },
+    "ROI": {
+      "label": "Republic of Ireland",
+      "services": {
+        "standard": {"label": "Standard (3-5 working days)", "chilled": false, "bands": [[2000, 795], [5000, 995], [10000, 1395], [30000, 1995]]},
+        "next_day": {"label": "Next working day", "chilled": true, "bands": [[2000, 1295], [5000, 1595], [10000, 1995], [30000, 2595]]},
+        "named_day": {"label": "Named day", "chilled": true, "bands": [[2000, 1395], [5000, 1695], [10000, 2095], [30000, 2695]]}
+      }
+    },
+    "GB": {
+      "label": "Great Britain (mainland)",
+      "services": {
+        "standard": {"label": "Standard (2-3 working days)", "chilled": false, "bands": [[2000, 595], [5000, 795], [10000, 1095], [30000, 1595]]},
+        "next_day": {"label": "Next working day", "chilled": true, "bands": [[2000, 1095], [5000, 1395], [10000, 1795], [30000, 2395]]},
+        "named_day": {"label": "Named day", "chilled": true, "bands": [[2000, 1195], [5000, 1495], [10000, 1895], [30000, 2495]]}
+      }
+    },
+    "GB_OFFSHORE": {
+      "label": "Highlands, Islands, Isle of Man and Channel Islands",
+      "services": {
+        "standard": {"label": "Standard (3-5 working days)", "chilled": false, "bands": [[2000, 995], [5000, 1395], [10000, 1895], [30000, 2595]]},
+        "named_day": {"label": "Named day", "chilled": true, "bands": [[2000, 1795], [5000, 2195], [10000, 2695], [30000, 3495]]}
+      }
+    },
+    "COLLECTION": {
+      "label": "Collection from Dunmurry or a market stall",
+      "services": {
+        "collection": {"label": "Collect in person", "chilled": true, "bands": [[100000, 0]]}
+      }
+    }
+  }
+}
