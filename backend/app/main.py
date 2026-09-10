@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from .config import get_settings
 from .db import create_all
 from .routers import admin, catalogue, checkout, content
 from .services import shipping
+
+FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend"
 
 DESCRIPTION = """
 Backend for the Tom & Ollie storefront relaunch.
@@ -62,6 +66,12 @@ def create_app() -> FastAPI:
             "admin_enabled": bool(settings.admin_api_key),
             "shipping_rates_quoted": card.get("quoted", False),
         }
+
+    # The storefront front end lives in ../frontend and is served from the
+    # same origin so it can call the API without CORS. Mounted last so it
+    # never shadows an /api/* route above.
+    if FRONTEND_DIR.is_dir():
+        app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
 
     return app
 
