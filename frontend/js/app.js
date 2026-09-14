@@ -2,10 +2,15 @@
 // backend's public endpoints only (never the admin API, never a key).
 "use strict";
 
-const API_BASE = (() => {
-  const params = new URLSearchParams(window.location.search);
-  return params.get("api") || window.TANDO_API_BASE || "";
-})();
+// Same-origin by default (the backend mounts this directory itself). A
+// separate static deployment can set window.TANDO_API_BASE in its own
+// <script> before this file loads. This is deliberately NOT settable from
+// the URL (e.g. ?api=) or any other visitor-controlled input: a query
+// param here would let an attacker craft a link that silently sends every
+// API call — including a checkout with the customer's name, email and
+// address — to a server of their choosing while the address bar still
+// shows the real site.
+const API_BASE = window.TANDO_API_BASE || "";
 
 const CATEGORY_COLORS = {
   hummus: "var(--hummus)",
@@ -21,19 +26,39 @@ function accentFor(slug, index) {
   return CATEGORY_COLORS[slug] || FALLBACK_COLORS[index % FALLBACK_COLORS.length];
 }
 
+// FastAPI validation errors (422) return `detail` as an array of
+// {loc, msg, type} objects, not a string. Left unhandled, that array gets
+// JSON.stringify'd and shown to the customer verbatim (raw field paths,
+// pydantic type names). Fold it into one readable sentence instead.
+function friendlyErrorMessage(detail, path, status) {
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail) && detail.length > 0) {
+    const msgs = detail
+      .map((item) => (item && typeof item.msg === "string" ? item.msg : null))
+      .filter(Boolean);
+    if (msgs.length > 0) return msgs.join(" ");
+  }
+  return `Something went wrong (${status}). Please try again.`;
+}
+
 async function api(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
-    ...options,
-  });
+  let res;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+      ...options,
+    });
+  } catch {
+    throw new Error("Couldn't reach the server — check your connection and try again.");
+  }
+
   let body = null;
   const text = await res.text();
   if (text) {
-    try { body = JSON.parse(text); } catch { body = text; }
+    try { body = JSON.parse(text); } catch { body = null; }
   }
   if (!res.ok) {
-    const message = (body && body.detail) ? body.detail : `Request to ${path} failed (${res.status}).`;
-    throw new Error(typeof message === "string" ? message : JSON.stringify(message));
+    throw new Error(friendlyErrorMessage(body && body.detail, path, res.status));
   }
   return body;
 }
@@ -49,10 +74,31 @@ const state = {
   quote: null,
 };
 
+// A malformed value here (a stale schema from a previous version, a hand
+// edit in devtools, a corrupted write) must never crash the page — every
+// basket operation downstream (.map/.reduce/.find) assumes a clean array
+// of well-shaped lines, so sanitize on the way in rather than trusting
+// storage.
+function sanitizeBasketLine(line) {
+  if (!line || typeof line !== "object") return null;
+  const sku = typeof line.sku === "string" && line.sku.trim() ? line.sku : null;
+  const name = typeof line.name === "string" ? line.name : "";
+  const variantLabel = typeof line.variantLabel === "string" ? line.variantLabel : "";
+  const unitPricePence = Number.isFinite(line.unitPricePence) && line.unitPricePence >= 0
+    ? Math.round(line.unitPricePence)
+    : null;
+  const qty = Number.isFinite(line.qty) ? Math.min(99, Math.max(1, Math.round(line.qty))) : null;
+  if (!sku || unitPricePence === null || qty === null) return null;
+  return { sku, name, variantLabel, unitPricePence, qty };
+}
+
 function loadBasket() {
   try {
     const raw = localStorage.getItem("tando_basket");
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(sanitizeBasketLine).filter(Boolean);
   } catch {
     return [];
   }
@@ -159,9 +205,10 @@ function renderGrid() {
     });
   });
   grid.querySelectorAll(".add-btn").forEach((btn) => {
+    const handler = withPending(btn, () => quickAdd(btn.dataset.slug));
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
-      quickAdd(btn.dataset.slug);
+      handler();
     });
   });
 }
@@ -177,7 +224,7 @@ function productCard(p, index) {
   else if (p.is_vegetarian) diet.push("Vegetarian");
 
   return `
-    <article class="card cat-${p.category.slug}" data-slug="${p.slug}" tabindex="0" style="--accent:${accent}">
+    <article class="card cat-${escapeHtml(p.category.slug)}" data-slug="${escapeHtml(p.slug)}" tabindex="0" style="--accent:${accent}">
       <div class="card-top" style="background:${accent}"></div>
       <div class="card-body">
         <span class="card-cat" style="background:${accent}">${escapeHtml(p.category.name)}</span>
@@ -190,7 +237,7 @@ function productCard(p, index) {
         </div>
       </div>
       <div class="card-actions">
-        <button class="add-btn" data-slug="${p.slug}" ${canAdd ? "" : "disabled"}>
+        <button class="add-btn" data-slug="${escapeHtml(p.slug)}" ${canAdd ? "" : "disabled"}>
           ${canAdd ? "Add to basket" : (isLive ? "Out of stock" : "Coming soon")}
         </button>
       </div>
@@ -279,7 +326,7 @@ function wireModalActions(p) {
   up?.addEventListener("click", () => { qty = Math.min(99, qty + 1); qtyEl.textContent = qty; });
   down?.addEventListener("click", () => { qty = Math.max(1, qty - 1); qtyEl.textContent = qty; });
 
-  addBtn?.addEventListener("click", () => {
+  addBtn?.addEventListener("click", withPending(addBtn, async () => {
     const select = document.getElementById("modalVariant");
     const sku = select ? select.value : null;
     const variant = (p.variants || []).find((v) => v.sku === sku);
@@ -292,7 +339,7 @@ function wireModalActions(p) {
       qty,
     });
     closeModal();
-  });
+  }));
 }
 
 function closeModal() {
@@ -378,7 +425,7 @@ function renderBasket() {
 function changeQty(sku, delta) {
   const line = state.basket.find((l) => l.sku === sku);
   if (!line) return;
-  line.qty += delta;
+  line.qty = Math.min(99, line.qty + delta);
   if (line.qty <= 0) state.basket = state.basket.filter((l) => l.sku !== sku);
   saveBasket();
   state.quote = null;
@@ -427,7 +474,7 @@ function renderQuote(quote) {
       </span>
       <span style="display:flex; align-items:center; gap:8px;">
         ${pence(o.price_pence)}
-        <input type="radio" name="shipOption" value="${o.service}" data-dates='${JSON.stringify(o.delivery_dates)}' ${quote.shipping_options[0] === o ? "checked" : ""} />
+        <input type="radio" name="shipOption" value="${escapeHtml(o.service)}" data-dates='${JSON.stringify(o.delivery_dates)}' ${quote.shipping_options[0] === o ? "checked" : ""} />
       </span>
     </label>`).join("");
 
@@ -520,11 +567,16 @@ async function loadEvents() {
 function wireEnquiryForm() {
   const form = document.getElementById("enquiryForm");
   const note = document.getElementById("enquiryNote");
-  form.addEventListener("submit", async (e) => {
+  const submitBtn = form.querySelector('button[type="submit"]');
+  form.addEventListener("submit", withPending(submitBtn, async (e) => {
     e.preventDefault();
     note.textContent = "Sending…";
     note.className = "form-note";
     const data = Object.fromEntries(new FormData(form).entries());
+    // Empty optional fields still arrive as "" from FormData; store as
+    // absent rather than an empty string so it reads the same as never
+    // having been filled in.
+    if (typeof data.company === "string" && data.company.trim() === "") delete data.company;
     try {
       await api("/api/enquiries", { method: "POST", body: JSON.stringify(data) });
       note.textContent = "Thanks — we'll be in touch shortly.";
@@ -534,13 +586,14 @@ function wireEnquiryForm() {
       note.textContent = err.message;
       note.className = "form-note err";
     }
-  });
+  }));
 }
 
 function wireNewsletterForm() {
   const form = document.getElementById("newsletterForm");
   const note = document.getElementById("newsletterNote");
-  form.addEventListener("submit", async (e) => {
+  const submitBtn = form.querySelector('button[type="submit"]');
+  form.addEventListener("submit", withPending(submitBtn, async (e) => {
     e.preventDefault();
     note.textContent = "Subscribing…";
     note.className = "form-note";
@@ -556,7 +609,7 @@ function wireNewsletterForm() {
       note.textContent = err.message;
       note.className = "form-note err";
     }
-  });
+  }));
 }
 
 // -------------------------------------------------------------- misc ------
@@ -568,6 +621,23 @@ function escapeHtml(str) {
 function debounce(fn, ms) {
   let t;
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+// Guards a button against double-submit: a fast double click or double tap
+// otherwise fires two concurrent requests (two orders, two enquiries, two
+// basket lines added) before the first one's response disables anything.
+function withPending(button, fn) {
+  return async (...args) => {
+    if (!button || button.disabled) return;
+    const original = button.textContent;
+    button.disabled = true;
+    try {
+      await fn(...args);
+    } finally {
+      button.disabled = false;
+      if (original !== undefined) button.textContent = original;
+    }
+  };
 }
 
 // ------------------------------------------------------------- init -------
@@ -613,8 +683,10 @@ function wireStaticUI() {
     });
   });
 
-  document.getElementById("getQuoteBtn").addEventListener("click", getQuote);
-  document.getElementById("placeOrderBtn").addEventListener("click", placeOrder);
+  const quoteBtn = document.getElementById("getQuoteBtn");
+  quoteBtn.addEventListener("click", withPending(quoteBtn, getQuote));
+  const orderBtn = document.getElementById("placeOrderBtn");
+  orderBtn.addEventListener("click", withPending(orderBtn, placeOrder));
   document.getElementById("ckGift").addEventListener("change", (e) => {
     document.getElementById("ckGiftMsgWrap").hidden = !e.target.checked;
   });
@@ -623,7 +695,21 @@ function wireStaticUI() {
   wireNewsletterForm();
 }
 
-wireStaticUI();
-renderBasket();
+// A last-resort net: an uncaught error anywhere in the boot sequence used
+// to abort every statement after it (that's how a single corrupted
+// localStorage value could take down the whole page — see loadBasket
+// above). These handlers stop that class of bug from ever going silent,
+// and the try/catch keeps one failed boot step (e.g. a wiring bug) from
+// blocking the others.
+window.addEventListener("error", (e) => {
+  console.error("Unhandled error:", e.error || e.message);
+  toast("Something went wrong loading part of the page — please refresh.");
+});
+window.addEventListener("unhandledrejection", (e) => {
+  console.error("Unhandled promise rejection:", e.reason);
+});
+
+try { wireStaticUI(); } catch (err) { console.error("wireStaticUI failed:", err); }
+try { renderBasket(); } catch (err) { console.error("renderBasket failed:", err); }
 loadCatalogue();
 loadEvents();

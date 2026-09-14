@@ -23,8 +23,11 @@ calls and static assets share one origin and one process — no CORS
 configuration needed for local use.
 
 To point the page at a different API host (e.g. serving these static files
-from somewhere else), append `?api=https://api.example.com` to the URL, or
-set `window.TANDO_API_BASE` before `js/app.js` loads.
+from somewhere else), set `window.TANDO_API_BASE` in a `<script>` before
+`js/app.js` loads. This is deliberately **not** readable from the URL (no
+`?api=` param) — that would let anyone craft a link that quietly redirects
+every API call, checkout included, to a server of their choosing while the
+address bar still showed the real domain.
 
 ## What's on the page
 

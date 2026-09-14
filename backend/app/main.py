@@ -53,6 +53,29 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    @app.middleware("http")
+    async def security_headers(request, call_next):
+        response = await call_next(request)
+        # None of these can be set from the static HTML itself — frame-ancestors
+        # and X-Frame-Options in particular are HTTP-header-only, so a <meta>
+        # CSP tag in index.html would not protect against clickjacking (an
+        # invisible iframe over the checkout button) the way this does.
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data:; "
+            "connect-src 'self'; "
+            "frame-ancestors 'none'; "
+            "base-uri 'self'; "
+            "form-action 'self'; "
+            "object-src 'none'"
+        )
+        return response
+
     app.include_router(catalogue.router)
     app.include_router(checkout.router)
     app.include_router(content.router)
