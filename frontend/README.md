@@ -51,14 +51,46 @@ address bar still showed the real domain.
 
 ## Design
 
-Colours are drawn from the Tom & Ollie market stall, flyer and packaging: a
-deep forest green (`--forest`) for the header/hero/footer, the orange/lime
-split-circle mark as the primary accent pair, and a warm cream (`--cream`)
-body. Category tags use a pastel echoing the packaging range (hummus pink,
-pesto green, olives teal, sweet pepper drops mustard) without copying any
-specific pack design. All values are CSS custom properties at the top of
-`css/style.css` — change them there to re-theme the whole site.
+Implemented from a Claude Design handoff (`design_handoff_shop_redesign/` —
+a `.dc.html` design reference, an asset pack, and a written spec covering
+tokens, copy, animation and accessibility down to the pixel). The result: a
+green→black→maroon hero gradient, a photographic page background tinted
+cream, real pack-shot photography on every catalogue card, and three
+click-to-flip product cards floating in the hero.
 
-No product photography is used. Nothing here was scraped from search
-results or the business's Instagram/Sainsbury's listings — those are useful
-references for colour, not assets this repo has rights to serve.
+**Colour** — `--forest` (`#12251b`) grounds the header, market section and
+footer; `--cream` (`#f9f0e4`) is the page ground; `--orange` (`#e0522c`) is
+the primary action colour; `--lime` (`#b8d44f`) is the secondary accent.
+Category accents (hummus pink, pesto green, olives teal, sweet pepper drops
+mustard) mark each card's top bar and category tag. Full palette — including
+the alpha values used for body copy, borders and text-on-dark — is at the
+top of `css/style.css`. **`--lime` on the light `--cream` ground fails
+contrast for text** (documented in the handoff); use `--lime-dark` there
+instead — it's only safe as a fill (badges, buttons) or as text on the dark
+`--forest` ground.
+
+**Type** — Young Serif (headings, always weight 400 — never bold it) and
+Hanken Grotesk (body/UI). Both are **self-hosted**: the actual `.woff2`
+files live in `assets/fonts/`, referenced by `@font-face` at the top of
+`css/style.css`. No Google Fonts `<link>`, no third-party font request at
+all — this was a deliberate choice to match the backend's
+`Content-Security-Policy` (`script-src`/`style-src` locked to `'self'`)
+without having to reopen it for `fonts.googleapis.com` and
+`fonts.gstatic.com`.
+
+**Motion** — pointer-tilt on the hero stage, product cards and the market
+photo; three independently-flippable hero cards (real `<button>`s with
+`aria-pressed`, not clickable `<div>`s); a looping ticker strip. Every
+animation and transition is disabled under `prefers-reduced-motion: reduce`
+(`css/style.css`, bottom) — not softened, switched off.
+
+**Photography** — the pack shots in `assets/products/` and the category/
+hero photos in `assets/` are **first-party images supplied by the business
+owner** (screenshots of their own packaging, cropped and upscaled for the
+page — see `design_handoff_shop_redesign/README.md` for the exact
+provenance). They are mapped to products by slug in `js/app.js`
+(`PRODUCT_IMAGES`), not served by the API — the backend's product model has
+no image field, and adding one was explicitly out of scope for this
+redesign (presentation-only; no `/api/*` contract changes). A product not in
+that map falls back to its category photo (`CATEGORY_FALLBACK_IMAGES`)
+rather than an empty image well.

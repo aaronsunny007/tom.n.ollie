@@ -18,12 +18,101 @@ const CATEGORY_COLORS = {
   olives: "var(--olives)",
   "sweet-pepper-drops": "var(--peppers)",
 };
-const FALLBACK_COLORS = ["var(--forest-3)", "var(--orange)", "var(--lime-dark)"];
+const FALLBACK_COLORS = ["var(--forest)", "var(--orange)", "var(--lime-dark)"];
 
 const pence = (n) => `£${(n / 100).toFixed(2)}`;
 
 function accentFor(slug, index) {
   return CATEGORY_COLORS[slug] || FALLBACK_COLORS[index % FALLBACK_COLORS.length];
+}
+
+// Product photography (design_handoff_shop_redesign): first-party pack shots
+// supplied by the business owner, mapped by product slug. The backend has no
+// image field — presentation-only per the handoff's own stated scope — so
+// this map is the source of truth for "which photo," never the API.
+const PRODUCT_IMAGES = {
+  "hummus-traditional-hummus": "assets/products/hummus-traditional.png",
+  "hummus-beetroot-hummus": "assets/products/hummus-beetroot.png",
+  "hummus-chilli-basil-garlic-hummus": "assets/products/hummus-chilli.png",
+  "hummus-vegan-chilli-basil-garlic-hummus": "assets/products/pesto-chilli-hummus.png",
+  "hummus-caramelised-onion-hummus": "assets/products/hummus-onion.png",
+  "hummus-red-pepper-hummus": "assets/products/hummus-redpepper.png",
+  "pesto-smoked-tomato-pesto": "assets/products/pesto-smoked.png",
+  "pesto-vegan-basil": "assets/products/pesto-basil.png",
+  "pesto-basil": "assets/products/pesto-basil.png",
+  "pesto-lyness-basil": "assets/products/pesto-basil.png",
+  "olives-pitted-green-olives": "assets/products/olives-lemon.png",
+  "olives-pitted-kalamata": "assets/products/black-olives.png",
+  "olives-italian-mixed": "assets/products/olives-mixed.png",
+  "olives-house-mix": "assets/products/olives-house-mix.png",
+  "olives-global-mix": "assets/products/olives-herb.png",
+  "olives-chilli-basil-garlic-green-olives": "assets/products/olives-herb.png",
+  "olives-garlicy-green-olives": "assets/products/olives-lemon.png",
+  "sweet-pepper-drops-red": "assets/products/drops-red.png",
+  "sweet-pepper-drops-mixed": "assets/products/drops-mixed.png",
+  "sweet-pepper-drops-yellow": "assets/products/yellow-drops.png",
+};
+// A product not yet in the map above (a new line the business adds before
+// its own pack shot exists) falls back to its category photo rather than an
+// empty well.
+const CATEGORY_FALLBACK_IMAGES = {
+  hummus: "assets/hummus-collection.png",
+  pesto: "assets/pesto-range.png",
+  olives: "assets/olives-tapenades.png",
+  "sweet-pepper-drops": "assets/products/drops-mixed.png",
+};
+function imageFor(product) {
+  return PRODUCT_IMAGES[product.slug] || CATEGORY_FALLBACK_IMAGES[product.category.slug] || null;
+}
+
+const REDUCE_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Shared pointer-tilt used by product cards and the market photo: normalise
+// the pointer position within the element to -0.5..0.5 and turn it into a
+// small rotate + lift. Skipped entirely under reduced motion rather than
+// just softened, since it's a motion effect tied to pointer movement, not
+// content.
+function wireTilt(el, { rotateMax = 12, translateY = -8, scale = 1.02 } = {}) {
+  if (!el || REDUCE_MOTION) return;
+  el.addEventListener("mousemove", (e) => {
+    const r = el.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - 0.5;
+    const y = (e.clientY - r.top) / r.height - 0.5;
+    el.style.transform = `translateY(${translateY}px) rotateY(${(x * rotateMax).toFixed(2)}deg) rotateX(${(-y * rotateMax).toFixed(2)}deg) scale(${scale})`;
+  });
+  el.addEventListener("mouseleave", () => { el.style.transform = ""; });
+}
+
+// Hero stage tilts more (16°/12°) and doesn't lift/scale — it's a whole
+// floating stage, not a single card. Listener sits on the wider visual
+// column (matching the design reference) so the tilt still engages when the
+// pointer is over the gaps between the three flip cards, not just on them.
+function wireHeroTilt() {
+  const zone = document.querySelector(".hero-visual");
+  const stage = document.getElementById("heroStage");
+  if (!zone || !stage || REDUCE_MOTION) return;
+  zone.addEventListener("mousemove", (e) => {
+    const r = zone.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - 0.5;
+    const y = (e.clientY - r.top) / r.height - 0.5;
+    stage.style.transform = `rotateY(${(x * 16).toFixed(2)}deg) rotateX(${(-y * 12).toFixed(2)}deg)`;
+  });
+  zone.addEventListener("mouseleave", () => { stage.style.transform = ""; });
+}
+
+// Each flip card's open/closed state lives in its own aria-pressed attribute
+// — a real <button> per the handoff's explicit accessibility requirement,
+// not a clickable <div>, so it's reachable and operable by keyboard with no
+// extra wiring beyond the click handler itself.
+function wireFlipCards() {
+  document.querySelectorAll(".flip-card").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const pressed = btn.getAttribute("aria-pressed") === "true";
+      btn.setAttribute("aria-pressed", String(!pressed));
+      const hint = btn.querySelector("[data-hint]");
+      if (hint) hint.textContent = pressed ? "Tap to reveal" : "Tap to hide";
+    });
+  });
 }
 
 // FastAPI validation errors (422) return `detail` as an array of
@@ -132,8 +221,7 @@ async function loadCatalogue() {
     renderCategoryPills();
     applyFilters();
 
-    const live = state.products.filter((p) => p.status === "active").length;
-    heroStatus.textContent = `${live} of ${state.products.length} lines are open for order right now — the rest are finishing up before relaunch.`;
+    heroStatus.textContent = `${state.products.length} lines across four ranges, all made in Belfast.`;
   } catch (err) {
     heroStatus.textContent = "Couldn't reach the shop just now — please refresh.";
     console.error(err);
@@ -203,6 +291,7 @@ function renderGrid() {
         openProductModal(card.dataset.slug);
       }
     });
+    wireTilt(card);
   });
   grid.querySelectorAll(".add-btn").forEach((btn) => {
     const handler = withPending(btn, () => quickAdd(btn.dataset.slug));
@@ -216,30 +305,31 @@ function renderGrid() {
 function productCard(p, index) {
   const accent = accentFor(p.category.slug, index);
   const isLive = p.status === "active";
-  const price = p.from_price_pence != null ? `<span class="price">from ${pence(p.from_price_pence)}</span>` : `<span class="price muted-price">Price coming soon</span>`;
   const canAdd = isLive && p.in_stock;
+  const priceText = p.from_price_pence != null ? `from ${pence(p.from_price_pence)}` : "Price coming soon";
+  const img = imageFor(p);
 
-  const diet = [];
-  if (p.is_vegan) diet.push("Vegan");
-  else if (p.is_vegetarian) diet.push("Vegetarian");
+  // One badge slot: dietary flag takes priority (it's the more specific,
+  // less-often-true fact), falling back to a live-availability flag.
+  const badge = p.is_vegan ? "Vegan" : p.is_vegetarian ? "Vegetarian" : (canAdd ? "Available now" : null);
 
   return `
-    <article class="card cat-${escapeHtml(p.category.slug)}" data-slug="${escapeHtml(p.slug)}" tabindex="0" style="--accent:${accent}">
-      <div class="card-top" style="background:${accent}"></div>
-      <div class="card-body">
+    <article class="card cat-${escapeHtml(p.category.slug)}" data-slug="${escapeHtml(p.slug)}" tabindex="0" style="animation-delay:${Math.min(index * 40, 400)}ms">
+      <div class="card-top"></div>
+      <div class="card-image-well">
+        ${img ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(p.name)}" loading="lazy" />` : ""}
         <span class="card-cat" style="background:${accent}">${escapeHtml(p.category.name)}</span>
+        ${badge ? `<span class="card-badge">${escapeHtml(badge)}</span>` : ""}
+      </div>
+      <div class="card-body">
         <h3 class="card-name">${escapeHtml(p.name)}</h3>
-        ${diet.length ? `<div class="diet-row">${diet.map((d) => `<span class="diet-tag">${d}</span>`).join("")}</div>` : ""}
         <div class="card-spacer"></div>
         <div class="status-row">
-          ${price}
-          <span class="badge ${isLive ? "badge-live" : "badge-soon"}">${isLive ? "Shop now" : "Coming soon"}</span>
+          <span class="price">${priceText}</span>
+          <button class="add-btn" data-slug="${escapeHtml(p.slug)}" ${canAdd ? "" : "disabled"}>
+            ${canAdd ? "Add to basket" : (isLive ? "Out of stock" : "Coming soon")}
+          </button>
         </div>
-      </div>
-      <div class="card-actions">
-        <button class="add-btn" data-slug="${escapeHtml(p.slug)}" ${canAdd ? "" : "disabled"}>
-          ${canAdd ? "Add to basket" : (isLive ? "Out of stock" : "Coming soon")}
-        </button>
       </div>
     </article>`;
 }
@@ -545,6 +635,16 @@ async function placeOrder() {
 
 // -------------------------------------------------------------- market ----
 
+function formatEventMeta(e) {
+  const short = (iso) => {
+    const d = new Date(`${iso}T00:00:00`);
+    return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  };
+  let range = short(e.starts_on);
+  if (e.ends_on && e.ends_on !== e.starts_on) range += `–${short(e.ends_on)}`;
+  return e.opening_time ? `${range} · ${e.opening_time}` : range;
+}
+
 async function loadEvents() {
   const listEl = document.getElementById("eventList");
   const emptyEl = document.getElementById("eventEmpty");
@@ -553,9 +653,8 @@ async function loadEvents() {
     if (events.length === 0) { emptyEl.hidden = false; return; }
     listEl.innerHTML = events.map((e) => `
       <div class="event-card">
-        <div class="event-date">${e.starts_on}${e.ends_on && e.ends_on !== e.starts_on ? ` – ${e.ends_on}` : ""}</div>
-        <div class="event-title">${escapeHtml(e.title)}</div>
-        <div class="event-loc">${escapeHtml(e.location)}${e.opening_time ? ` · ${escapeHtml(e.opening_time)}` : ""}</div>
+        <span class="event-title">${escapeHtml(e.title)}${e.location ? ` · ${escapeHtml(e.location)}` : ""}</span>
+        <span class="event-loc">${escapeHtml(formatEventMeta(e))}</span>
       </div>`).join("");
   } catch {
     emptyEl.hidden = false;
@@ -693,6 +792,10 @@ function wireStaticUI() {
 
   wireEnquiryForm();
   wireNewsletterForm();
+
+  wireFlipCards();
+  wireHeroTilt();
+  wireTilt(document.getElementById("marketPhoto"));
 }
 
 // A last-resort net: an uncaught error anywhere in the boot sequence used
