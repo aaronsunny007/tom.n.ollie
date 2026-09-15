@@ -65,17 +65,25 @@ function imageFor(product) {
   return PRODUCT_IMAGES[product.slug] || CATEGORY_FALLBACK_IMAGES[product.category.slug] || null;
 }
 
-const REDUCE_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+// Read live rather than cached: if someone changes their OS motion setting
+// mid-visit, the CSS media query reacts immediately, and this should too —
+// a cached boolean read once at load would leave pointer-tilt running (or
+// stopped) against a preference that's no longer current.
+function reducedMotionPreferred() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 // Shared pointer-tilt used by product cards and the market photo: normalise
 // the pointer position within the element to -0.5..0.5 and turn it into a
-// small rotate + lift. Skipped entirely under reduced motion rather than
-// just softened, since it's a motion effect tied to pointer movement, not
-// content.
+// small rotate + lift. No-ops under reduced motion (checked live on every
+// move, not just at wiring time) rather than just softened, since it's a
+// motion effect tied to pointer movement, not content.
 function wireTilt(el, { rotateMax = 12, translateY = -8, scale = 1.02 } = {}) {
-  if (!el || REDUCE_MOTION) return;
+  if (!el) return;
   el.addEventListener("mousemove", (e) => {
+    if (reducedMotionPreferred()) return;
     const r = el.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0) return; // hidden/zero-size — nothing to compute against
     const x = (e.clientX - r.left) / r.width - 0.5;
     const y = (e.clientY - r.top) / r.height - 0.5;
     el.style.transform = `translateY(${translateY}px) rotateY(${(x * rotateMax).toFixed(2)}deg) rotateX(${(-y * rotateMax).toFixed(2)}deg) scale(${scale})`;
@@ -90,9 +98,11 @@ function wireTilt(el, { rotateMax = 12, translateY = -8, scale = 1.02 } = {}) {
 function wireHeroTilt() {
   const zone = document.querySelector(".hero-visual");
   const stage = document.getElementById("heroStage");
-  if (!zone || !stage || REDUCE_MOTION) return;
+  if (!zone || !stage) return;
   zone.addEventListener("mousemove", (e) => {
+    if (reducedMotionPreferred()) return;
     const r = zone.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0) return;
     const x = (e.clientX - r.left) / r.width - 0.5;
     const y = (e.clientY - r.top) / r.height - 0.5;
     stage.style.transform = `rotateY(${(x * 16).toFixed(2)}deg) rotateX(${(-y * 12).toFixed(2)}deg)`;
