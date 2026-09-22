@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Tom &amp; Ollie — Brag</title>
+    <script src="assets/gsap.min.js"></script>
+    <script src="assets/music/audio-data.js"></script>
+    <style>
+      @font-face {
+        font-family: 'Hanken Grotesk';
+        font-style: normal;
+        font-weight: 400 700;
+        font-display: swap;
+        src: url('assets/hanken-grotesk-latin.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'Young Serif';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url('assets/young-serif-latin.woff2') format('woff2');
+      }
+
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; overflow: hidden; background: #12251b; }
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-family: 'Hanken Grotesk', sans-serif;
+      }
+      .clip { position: absolute; inset: 0; overflow: hidden; }
+
+      :root {
+        --forest: #12251b;
+        --cream: #f9f0e4;
+        --orange: #e0522c;
+        --lime: #b8d44f;
+        --hummus: #d9607a;
+        --pesto: #5a9e4b;
+        --olives: #1f6b52;
+        --peppers: #e0892c;
+      }
+
+      /* ---------- Scene 1: Hook ---------- */
+      #scene-hook {
+        background: linear-gradient(155deg, #12251b 0%, #14100d 45%, #5a1f18 78%, #74241a 100%);
+        display: flex;
+        align-items: center;
+      }
+      .hero-glow {
+        position: absolute;
+        width: 1100px;
+        height: 1100px;
+        left: 50%;
+        top: 50%;
+        margin-left: -550px;
+        margin-top: -550px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(224, 82, 44, 0.55) 0%, rgba(224, 82, 44, 0) 68%);
+        filter: blur(60px);
+        opacity: 0.5;
+      }
+      .hook-copy { position: relative; padding: 0 180px; max-width: 1500px; }
+      .eyebrow {
+        color: rgba(249, 240, 228, 0.82);
+        font-size: 28px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        margin-bottom: 28px;
+        font-weight: 600;
+      }
+      .headline {
+        font-family: 'Young Serif', serif;
+        font-weight: 400;
+        color: var(--cream);
+        font-size: 96px;
+        line-height: 1.08;
+        max-width: 1400px;
+      }
+
+      /* ---------- Scene 2: Flip reveal ---------- */
+      #scene-flip {
+        background: linear-gradient(155deg, #12251b 0%, #14100d 45%, #5a1f18 78%, #74241a 100%);
+      }
+      .flip-stage {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 60px;
+      }
+      .flip-card { width: 380px; height: 460px; perspective: 1600px; }
+      .flip-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        transform-style: preserve-3d;
+      }
+      .flip-face {
+        position: absolute;
+        inset: 0;
+        border-radius: 28px;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        overflow: hidden;
+      }
+      .flip-front { display: flex; align-items: center; justify-content: center; }
+      .flip-front-inner { text-align: center; color: var(--forest); }
+      .flip-kicker { display: block; font-size: 22px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.7; margin-bottom: 10px; }
+      .flip-name { display: block; font-family: 'Young Serif', serif; font-weight: 400; font-size: 40px; }
+      .flip-back { transform: rotateY(180deg); }
+      .flip-back img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .flip-label {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 22px 24px;
+        background: rgba(18,37,27,0.92);
+        color: var(--cream);
+        font-size: 26px;
+        font-weight: 600;
+      }
+
+      /* ---------- Scene 3: Shop the collection ---------- */
+      #scene-shop { background: var(--cream); }
+      .shop-header { position: absolute; left: 160px; top: 88px; }
+      #shop-heading { font-family: 'Young Serif', serif; font-weight: 400; font-size: 58px; color: var(--forest); }
+      #shop-sub { margin-top: 10px; font-size: 24px; color: rgba(18,37,27,0.68); }
+      #pill-row {
+        position: absolute;
+        left: 160px;
+        top: 232px;
+        display: flex;
+        gap: 20px;
+      }
+      .pill {
+        position: relative;
+        padding: 16px 30px;
+        border-radius: 999px;
+        background: rgba(18,37,27,0.06);
+        color: var(--forest);
+        font-size: 24px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      #pill-highlight {
+        position: absolute;
+        left: 160px;
+        top: 232px;
+        height: 60px;
+        border-radius: 999px;
+        background: var(--orange);
+        z-index: -1;
+      }
+      .cat-group {
+        position: absolute;
+        left: 470px;
+        top: 358px;
+        width: 1290px;
+        display: flex;
+        gap: 60px;
+      }
+      .prod-card {
+        width: 480px;
+        height: 560px;
+        border-radius: 24px;
+        background: #ffffff;
+        box-shadow: 0 24px 60px rgba(18,37,27,0.14);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .prod-topbar { height: 12px; width: 100%; }
+      .prod-photo { flex: 1; display: flex; align-items: center; justify-content: center; background: #fdf8ee; }
+      .prod-photo img { width: 100%; height: 100%; object-fit: cover; }
+      .prod-info { padding: 24px 28px 28px; display: flex; align-items: center; justify-content: space-between; }
+      .prod-name { font-family: 'Young Serif', serif; font-weight: 400; font-size: 28px; color: var(--forest); }
+      .prod-price { font-size: 26px; font-weight: 700; color: var(--orange); }
+
+      /* ---------- Scene 4: Add to basket ---------- */
+      #scene-basket { background: var(--cream); }
+      #basket-card {
+        position: absolute;
+        left: 200px;
+        top: 220px;
+        width: 560px;
+        height: 640px;
+        border-radius: 28px;
+        background: #ffffff;
+        box-shadow: 0 30px 70px rgba(18,37,27,0.16);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      #basket-card .prod-topbar { height: 14px; background: var(--hummus); }
+      #basket-card .prod-photo { height: 360px; }
+      .basket-card-info { padding: 30px 36px; }
+      .basket-card-info .prod-name { font-size: 34px; }
+      .basket-card-info .prod-price { font-size: 30px; display: block; margin: 10px 0 24px; }
+      #add-btn {
+        display: inline-block;
+        padding: 18px 40px;
+        border-radius: 999px;
+        background: var(--orange);
+        color: var(--cream);
+        font-size: 24px;
+        font-weight: 700;
+      }
+      #basket-icon-wrap {
+        position: absolute;
+        right: 160px;
+        top: 60px;
+        width: 76px;
+        height: 76px;
+        border-radius: 50%;
+        background: var(--forest);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #basket-icon-wrap svg { width: 32px; height: 32px; }
+      #basket-count {
+        position: absolute;
+        right: 152px;
+        top: 52px;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: var(--orange);
+        color: var(--cream);
+        font-size: 18px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #basket-count span { position: absolute; }
+      #cursor-dot {
+        position: absolute;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: var(--forest);
+        border: 4px solid var(--cream);
+        box-shadow: 0 6px 18px rgba(18,37,27,0.35);
+      }
+      #basket-drawer {
+        position: absolute;
+        left: 1920px;
+        top: 0;
+        width: 560px;
+        height: 100%;
+        background: var(--forest);
+        color: var(--cream);
+        padding: 60px 48px;
+      }
+      #basket-drawer h3 { font-family: 'Young Serif', serif; font-weight: 400; font-size: 34px; margin-bottom: 30px; }
+      .drawer-line {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        background: rgba(249,240,228,0.08);
+        border-radius: 16px;
+        padding: 18px 20px;
+        margin-bottom: 24px;
+      }
+      .drawer-line img { width: 72px; height: 72px; border-radius: 12px; object-fit: cover; }
+      .drawer-line-name { font-size: 22px; font-weight: 600; }
+      .drawer-line-price { font-size: 20px; opacity: 0.75; margin-top: 4px; }
+      .drawer-subtotal { display: flex; justify-content: space-between; font-size: 24px; font-weight: 700; border-top: 1px solid rgba(249,240,228,0.25); padding-top: 20px; }
+
+      /* ---------- Scene 5: Outro ---------- */
+      #scene-outro {
+        background: var(--forest);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #outro-mark { text-align: center; }
+      #outro-mark img { width: 110px; height: 110px; display: block; margin: 0 auto 22px; }
+      #outro-word { font-family: 'Young Serif', serif; font-weight: 400; font-size: 92px; color: var(--cream); }
+      #outro-word .amp { color: var(--orange); }
+      #outro-tagline { margin-top: 22px; font-size: 30px; color: rgba(249,240,228,0.82); }
+      #outro-ticker { margin-top: 60px; font-size: 20px; letter-spacing: 2px; text-transform: uppercase; color: rgba(249,240,228,0.68); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="20" data-width="1920" data-height="1080">
+
+      <!-- ================= Scene 1 — Hook — 0 to 2.65s ================= -->
+      <section id="scene-hook" class="clip" data-start="0" data-duration="2.65" data-track-index="1">
+        <div id="hero-glow-1" class="hero-glow"></div>
+        <div class="hook-copy">
+          <p id="eyebrow" class="eyebrow">St George's Market, Belfast</p>
+          <h1 id="headline" class="headline">Handmade hummus, pesto, olives &amp; sweet pepper drops</h1>
+        </div>
+      </section>
+
+      <!-- ================= Scene 2 — Flip reveal — 2.65 to 6.34s ================= -->
+      <section id="scene-flip" class="clip" data-start="2.65" data-duration="3.69" data-track-index="1">
+        <div id="hero-glow-2" class="hero-glow"></div>
+        <div class="flip-stage">
+
+          <div id="flip1" class="flip-card">
+            <div id="flip1-inner" class="flip-inner">
+              <div class="flip-face flip-front" style="background:linear-gradient(150deg,#e0e8c4,#a8c24a)">
+                <div class="flip-front-inner">
+                  <span class="flip-kicker">Hummus</span>
+                  <span class="flip-name">Beetroot Hummus</span>
+                </div>
+              </div>
+              <div class="flip-face flip-back">
+                <img src="assets/images/hummus-beetroot.png" alt="Beetroot Hummus pack" />
+                <div id="flip1-label" class="flip-label">Beetroot Hummus</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="flip2" class="flip-card">
+            <div id="flip2-inner" class="flip-inner">
+              <div class="flip-face flip-front" style="background:linear-gradient(150deg,#f3d7c6,#c9402b)">
+                <div class="flip-front-inner">
+                  <span class="flip-kicker">Sweet Pepper Drops</span>
+                  <span class="flip-name">Red Pepper Drops</span>
+                </div>
+              </div>
+              <div class="flip-face flip-back">
+                <img src="assets/images/drops-red.png" alt="Red Sweet Pepper Drops pack" />
+                <div id="flip2-label" class="flip-label">Red Pepper Drops</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="flip3" class="flip-card">
+            <div id="flip3-inner" class="flip-inner">
+              <div class="flip-face flip-front" style="background:linear-gradient(150deg,#e6d9bd,#8a6a2f)">
+                <div class="flip-front-inner">
+                  <span class="flip-kicker">Olives</span>
+                  <span class="flip-name">House Mix</span>
+                </div>
+              </div>
+              <div class="flip-face flip-back">
+                <img src="assets/images/olives-house-mix.png" alt="House Mix olives pack" />
+                <div id="flip3-label" class="flip-label">House Mix</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ================= Scene 3 — Shop the collection — 6.34 to 11.60s ================= -->
+      <section id="scene-shop" class="clip" data-start="6.34" data-duration="5.26" data-track-index="1">
+        <div class="shop-header">
+          <h2 id="shop-heading">The collection</h2>
+          <p id="shop-sub">Every line we make, sorted by range.</p>
+        </div>
+
+        <div id="pill-highlight"></div>
+        <div id="pill-row">
+          <div id="pill-hummus" class="pill">Hummus</div>
+          <div id="pill-pesto" class="pill">Pesto</div>
+          <div id="pill-olives" class="pill">Olives</div>
+          <div id="pill-peppers" class="pill">Sweet Pepper Drops</div>
+        </div>
+
+        <div id="cat-hummus" class="cat-group">
+          <div class="prod-card">
+            <div class="prod-topbar" style="background:var(--hummus)"></div>
+            <div class="prod-photo"><img src="assets/images/hummus-chilli.png" alt="Chilli Hummus" /></div>
+            <div class="prod-info"><span class="prod-name">Chilli Hummus</span><span class="prod-price">£3.60</span></div>
+          </div>
+          <div class="prod-card">
+            <div class="prod-topbar" style="background:var(--hummus)"></div>
+            <div class="prod-photo"><img src="assets/images/hummus-traditional.png" alt="Traditional Hummus" /></div>
+            <div class="prod-info"><span class="prod-name">Traditional Hummus</span><span class="prod-price">£3.40</span></div>
+          </div>
+        </div>
+
+        <div id="cat-pesto" class="cat-group">
+          <div class="prod-card">
+            <div class="prod-topbar" style="background:var(--pesto)"></div>
+            <div class="prod-photo"><img src="assets/images/pesto-basil.png" alt="Basil Pesto" /></div>
+            <div class="prod-info"><span class="prod-name">Basil Pesto</span><span class="prod-price">£4.20</span></div>
+          </div>
+          <div class="prod-card">
+            <div class="prod-topbar" style="background:var(--pesto)"></div>
+            <div class="prod-photo"><img src="assets/images/pesto-sundried.png" alt="Sun-dried Tomato Pesto" /></div>
+            <div class="prod-info"><span class="prod-name">Sun-dried Tomato Pesto</span><span class="prod-price">£4.20</span></div>
+          </div>
+        </div>
+
+        <div id="cat-olives" class="cat-group">
+          <div class="prod-card">
+            <div class="prod-topbar" style="background:var(--olives)"></div>
+            <div class="prod-photo"><img src="assets/images/olives-kalamata.png" alt="Kalamata Olives" /></div>
+            <div class="prod-info"><span class="prod-name">Kalamata Olives</span><span class="prod-price">£3.80</span></div>
+          </div>
+          <div class="prod-card">
+            <div class="prod-topbar" style="background:var(--olives)"></div>
+            <div class="prod-photo"><img src="assets/images/olives-mixed.png" alt="Mixed Olives" /></div>
+            <div class="prod-info"><span class="prod-name">Mixed Olives</span><span class="prod-price">£3.60</span></div>
+          </div>
+        </div>
+
+        <div id="cat-peppers" class="cat-group">
+          <div class="prod-card">
+            <div class="prod-topbar" style="background:var(--peppers)"></div>
+            <div class="prod-photo"><img src="assets/images/drops-yellow.png" alt="Yellow Pepper Drops" /></div>
+            <div class="prod-info"><span class="prod-name">Yellow Pepper Drops</span><span class="prod-price">£3.90</span></div>
+          </div>
+          <div class="prod-card">
+            <div class="prod-topbar" style="background:var(--peppers)"></div>
+            <div class="prod-photo"><img src="assets/images/drops-mixed.png" alt="Mixed Pepper Drops" /></div>
+            <div class="prod-info"><span class="prod-name">Mixed Pepper Drops</span><span class="prod-price">£3.90</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= Scene 4 — Add to basket — 11.60 to 15.81s ================= -->
+      <section id="scene-basket" class="clip" data-start="11.60" data-duration="4.21" data-track-index="1">
+        <div id="basket-card">
+          <div class="prod-topbar"></div>
+          <div class="prod-photo"><img src="assets/images/hummus-chilli.png" alt="Chilli Hummus" /></div>
+          <div class="basket-card-info">
+            <span class="prod-name">Chilli Hummus</span>
+            <span class="prod-price">£3.60</span>
+            <span id="add-btn">Add to basket</span>
+          </div>
+        </div>
+
+        <div id="basket-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#f9f0e4" stroke-width="1.8"><path d="M6 8h14l-1.3 8.2a2 2 0 0 1-2 1.8H9.3a2 2 0 0 1-2-1.8L6 8Zm2.5 0V6a3.5 3.5 0 0 1 7 0v2"/></svg>
+        </div>
+        <div id="basket-count">
+          <span id="count-0">0</span>
+          <span id="count-1">1</span>
+        </div>
+
+        <div id="cursor-dot" style="left:960px; top:760px;"></div>
+
+        <div id="basket-drawer">
+          <h3>Your basket</h3>
+          <div class="drawer-line">
+            <img src="assets/images/hummus-chilli.png" alt="Chilli Hummus" />
+            <div>
+              <div class="drawer-line-name">Chilli Hummus</div>
+              <div class="drawer-line-price">£3.60</div>
+            </div>
+          </div>
+          <div class="drawer-subtotal"><span>Subtotal</span><span>£3.60</span></div>
+        </div>
+      </section>
+
+      <!-- ================= Scene 5 — Outro — 15.81 to 20.00s ================= -->
+      <section id="scene-outro" class="clip" data-start="15.81" data-duration="4.19" data-track-index="1">
+        <div id="outro-mark">
+          <img src="assets/images/logo.png" alt="" />
+          <div id="outro-word">Tom<span class="amp"> &amp; </span>Ollie</div>
+          <p id="outro-tagline">Twenty lines, four ranges, one stall in Belfast.</p>
+          <p id="outro-ticker">Made in Belfast · Small batch · St George's Market · No shortcuts</p>
+        </div>
+      </section>
+
+      <!-- ================= Audio ================= -->
+      <audio id="bgm" src="assets/music/happy-beats-business-moves-vol-9-by-ende-dot-app.mp3"
+        data-start="0" data-duration="20" data-track-index="10" data-volume="0.35"
+        data-automation='{"version":1,"lanes":[{"target":"volume","points":[{"t":0,"v":0},{"t":0.4,"v":0.35},{"t":19.4,"v":0.35},{"t":20,"v":0}]}]}'></audio>
+
+      <audio id="sfx-flip1" src="assets/sfx/casino/card-place-1.ogg" data-start="3.18" data-track-index="11" data-volume="0.75"></audio>
+      <audio id="sfx-flip2" src="assets/sfx/casino/card-place-2.ogg" data-start="4.23" data-track-index="12" data-volume="0.75"></audio>
+      <audio id="sfx-flip3" src="assets/sfx/casino/card-place-3.ogg" data-start="5.28" data-track-index="13" data-volume="0.75"></audio>
+
+      <audio id="sfx-shop-arrival" src="assets/sfx/interface/drop_001.ogg" data-start="6.44" data-track-index="14" data-volume="0.55"></audio>
+      <audio id="sfx-pill1" src="assets/sfx/interface/switch_001.ogg" data-start="7.92" data-track-index="15" data-volume="0.6"></audio>
+      <audio id="sfx-pill2" src="assets/sfx/interface/switch_004.ogg" data-start="8.96" data-track-index="16" data-volume="0.6"></audio>
+      <audio id="sfx-pill3" src="assets/sfx/interface/switch_006.ogg" data-start="10.54" data-track-index="17" data-volume="0.6"></audio>
+
+      <audio id="sfx-tap" src="assets/sfx/interface/click_002.ogg" data-start="12.65" data-track-index="18" data-volume="0.8"></audio>
+      <audio id="sfx-success" src="assets/sfx/impact/impactSoft_medium_001.ogg" data-start="12.85" data-track-index="19" data-volume="0.7"></audio>
+
+      <audio id="sfx-outro-bell" src="assets/sfx/impact/impactBell_heavy_000.ogg" data-start="16.34" data-track-index="20" data-volume="0.65"></audio>
+
+    </div>
+
+    <script>
+      document.fonts.ready.then(function () {
+        var tl = gsap.timeline({ paused: true });
+
+        // ---------- initial states for elements toggled later ----------
+        gsap.set(["#cat-pesto", "#cat-olives", "#cat-peppers"], { opacity: 0 });
+        gsap.set("#cat-hummus", { opacity: 1 });
+        gsap.set("#count-1", { opacity: 0 });
+        gsap.set("#cursor-dot", { opacity: 0 });
+
+        // ---------- Scene 1: Hook (0 - 2.65s) ----------
+        tl.from("#eyebrow", { opacity: 0, y: 20, duration: 0.4, ease: "power2.out" }, 0.15);
+        tl.from("#headline", { opacity: 0, y: 30, duration: 0.55, ease: "power3.out" }, 0.5);
+
+        // ---------- Scene 2: Flip reveal (2.65 - 6.34s) ----------
+        tl.from(["#flip1", "#flip2", "#flip3"], { opacity: 0, y: 40, duration: 0.4, stagger: 0.08, ease: "power2.out" }, 2.65);
+
+        tl.to("#flip1-inner", { rotateY: 180, duration: 0.5, ease: "power2.inOut" }, 3.18); // beat-locked: 3.18s
+        tl.from("#flip1-label", { opacity: 0, duration: 0.3 }, 3.55);
+
+        tl.to("#flip2-inner", { rotateY: 180, duration: 0.5, ease: "power2.inOut" }, 4.23); // beat-locked: 4.23s
+        tl.from("#flip2-label", { opacity: 0, duration: 0.3 }, 4.6);
+
+        tl.to("#flip3-inner", { rotateY: 180, duration: 0.5, ease: "power2.inOut" }, 5.28); // beat-locked: 5.28s
+        tl.from("#flip3-label", { opacity: 0, duration: 0.3 }, 5.65);
+
+        // ---------- Scene 3: Shop the collection (6.34 - 11.60s) ----------
+        tl.from(["#shop-heading", "#shop-sub"], { opacity: 0, y: 20, duration: 0.4, stagger: 0.1, ease: "power2.out" }, 6.34);
+        tl.from("#pill-row", { opacity: 0, y: 10, duration: 0.3 }, 6.44);
+        tl.from("#pill-highlight", { opacity: 0, duration: 0.3 }, 6.44);
+
+        // Position the highlight under each pill using measured layout (no hardcoded guesses).
+        var pillHummus = document.getElementById("pill-hummus");
+        var pillPesto = document.getElementById("pill-pesto");
+        var pillOlives = document.getElementById("pill-olives");
+        var pillPeppers = document.getElementById("pill-peppers");
+        var highlight = document.getElementById("pill-highlight");
+        function pillBox(el) {
+          return { left: el.offsetLeft, width: el.offsetWidth };
+        }
+        var bHummus = pillBox(pillHummus);
+        var bPesto = pillBox(pillPesto);
+        var bOlives = pillBox(pillOlives);
+        var bPeppers = pillBox(pillPeppers);
+        // #pill-highlight's CSS left:0 is the static base; motion is authored as a
+        // transform (x) offset from that base, never as a tweened `left`.
+        gsap.set(highlight, { x: bHummus.left, width: bHummus.width });
+
+        tl.from(["#cat-hummus .prod-card"], { y: 30, opacity: 0, duration: 0.35, stagger: 0.08, ease: "power2.out" }, 6.34);
+
+        tl.to("#cat-hummus", { opacity: 0, duration: 0.25 }, 7.92); // beat-locked: 7.92s
+        tl.to("#cat-pesto", { opacity: 1, duration: 0.25 }, 7.92);
+        tl.from("#cat-pesto .prod-card", { y: 30, opacity: 0, duration: 0.35, stagger: 0.08, ease: "power2.out" }, 7.92);
+        tl.to(highlight, { x: bPesto.left, width: bPesto.width, duration: 0.3, ease: "power2.inOut" }, 7.92);
+
+        tl.to("#cat-pesto", { opacity: 0, duration: 0.25 }, 8.96); // beat-locked: 8.96s
+        tl.to("#cat-olives", { opacity: 1, duration: 0.25 }, 8.96);
+        tl.from("#cat-olives .prod-card", { y: 30, opacity: 0, duration: 0.35, stagger: 0.08, ease: "power2.out" }, 8.96);
+        tl.to(highlight, { x: bOlives.left, width: bOlives.width, duration: 0.3, ease: "power2.inOut" }, 8.96);
+
+        tl.to("#cat-olives", { opacity: 0, duration: 0.25 }, 10.54); // beat-locked: 10.54s (strong cue)
+        tl.to("#cat-peppers", { opacity: 1, duration: 0.25 }, 10.54);
+        tl.from("#cat-peppers .prod-card", { y: 30, opacity: 0, duration: 0.35, stagger: 0.08, ease: "power2.out" }, 10.54);
+        tl.to(highlight, { x: bPeppers.left, width: bPeppers.width, duration: 0.3, ease: "power2.inOut" }, 10.54);
+
+        // ---------- Scene 4: Add to basket (11.60 - 15.81s) ----------
+        tl.from("#basket-card", { opacity: 0, y: 20, duration: 0.35, ease: "power2.out" }, 11.60);
+
+        // #cursor-dot's inline left:960px/top:760px is the static base; travel to the
+        // Add button is authored as a transform (x/y) offset measured from that base.
+        var cursorBase = { left: 960, top: 760 };
+        var addBtnRect = document.getElementById("add-btn").getBoundingClientRect();
+        var cursorDx = addBtnRect.left + addBtnRect.width / 2 - cursorBase.left;
+        var cursorDy = addBtnRect.top + addBtnRect.height / 2 - cursorBase.top;
+
+        tl.to("#cursor-dot", { opacity: 1, duration: 0.2 }, 11.9);
+        tl.to("#cursor-dot", { x: cursorDx, y: cursorDy, duration: 0.55, ease: "power2.inOut" }, 11.9); // travels to the Add button
+
+        tl.to("#cursor-dot", { scale: 0.7, duration: 0.12, yoyo: true, repeat: 1 }, 12.65); // beat-locked tap: 12.65s
+        tl.to("#add-btn", { scale: 0.92, duration: 0.1, yoyo: true, repeat: 1 }, 12.65);
+
+        tl.to("#count-0", { opacity: 0, duration: 0.15 }, 12.75);
+        tl.to("#count-1", { opacity: 1, duration: 0.15 }, 12.75);
+
+        // #basket-drawer's CSS left:1920px is the static off-screen base; the slide-in
+        // is authored as a transform (x) offset, never a tweened `left`.
+        tl.to("#basket-drawer", { x: -560, duration: 0.5, ease: "power3.out" }, 12.9);
+        tl.to("#cursor-dot", { opacity: 0, duration: 0.2 }, 13.2);
+
+        // ---------- Scene 5: Outro (15.81 - 20.00s) ----------
+        tl.from("#outro-mark", { opacity: 0, y: 20, scale: 0.95, duration: 0.5, ease: "power3.out" }, 15.84); // beat-locked landing: 16.34s
+        tl.from("#outro-tagline", { opacity: 0, y: 15, duration: 0.4, ease: "power2.out" }, 16.6);
+        tl.from("#outro-ticker", { opacity: 0, duration: 0.4, ease: "power2.out" }, 17.2);
+
+        // ---------- Audio-reactive: subtle hero glow breathing with RMS ----------
+        // Applies only across the two hero scenes (0 - 6.34s); AUDIO_DATA is pre-extracted (deterministic).
+        if (typeof AUDIO_DATA !== "undefined") {
+          var glow1 = document.getElementById("hero-glow-1");
+          var glow2 = document.getElementById("hero-glow-2");
+          for (var f = 0; f < AUDIO_DATA.totalFrames; f++) {
+            (function (frame) {
+              var t = frame.time;
+              if (t > 6.34) return;
+              var op = 0.42 + frame.rms * 0.18; // subtle 0.42 - 0.60 breathing range
+              tl.call(
+                function () {
+                  var target = t <= 2.65 ? glow1 : glow2;
+                  if (target) gsap.set(target, { opacity: op });
+                },
+                [],
+                t,
+              );
+            })(AUDIO_DATA.frames[f]);
+          }
+        }
+
+        window.__timelines["main"] = tl;
+        tl.seek(0);
+        if (window.__hfForceTimelineRebind) window.__hfForceTimelineRebind();
+      });
+    </script>
+  </body>
+</html>
