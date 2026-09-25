@@ -106,13 +106,20 @@ img { max-width: 100%; display: block; }
 }
 .skip-link:focus { left: 0; }
 
-/* -------- page shell: fixed background photo + cream tint -------- */
+/* -------- page shell: fixed background photo + cream tint --------
+   Blurred and scaled up so the photo reads purely as warm colour and
+   texture behind the page, per the original brief ("reads as a tint, not
+   a picture") — at full sharpness the market-stall photo's own logo and
+   badge text kept surfacing legibly behind headings and forms as scroll
+   position changed, which read as a glitch rather than a design choice. */
 .bg-photo {
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  position: fixed; inset: -40px; z-index: 0; pointer-events: none;
   background-image: url('../assets/mezze-table.png');
   background-size: cover; background-position: center;
+  filter: blur(28px) saturate(1.05);
+  transform: scale(1.1);
 }
-.bg-tint { position: fixed; inset: 0; z-index: 1; pointer-events: none; background: var(--cream); opacity: .8; }
+.bg-tint { position: fixed; inset: 0; z-index: 1; pointer-events: none; background: var(--cream); opacity: .78; }
 .page { position: relative; z-index: 2; min-height: 100vh; }
 
 /* -------- buttons -------- */
